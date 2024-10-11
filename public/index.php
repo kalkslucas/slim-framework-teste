@@ -10,7 +10,7 @@ $app = new \Slim\App([
 ]); //Instancia um objeto da API
 /* 
 
-utilização das rotas com GET
+Utilização das rotas com Slim Framework
 
 
 $app->get('/', function () { //pelo GET você recupera, dentro de pattern, você define a rota e, dentro da função anomina, exibe as informações na tela
@@ -112,7 +112,7 @@ $app->delete('/usuarios/remove/{id}', function (Request $request, Response $resp
 });
 
 /*--------------------------------------------------------------*/
-
+//Serviços e Dependencias
 
 //Container dependency injection
 /*Casos onde utiliza classes externas*/
@@ -146,5 +146,43 @@ $container['Home'] = function () {
 };
 /*Controllers como serviço*/
 $app->get('/teste', 'Home:index');
+
+/*------------------------------------------------------------------------------------*/
+//Tipos de Resposta
+//Cabeçalho, texto, JSON, XML
+/*Cabeçalho*/
+$app->get('/header', function (Request $request, Response $response) {
+  $response->getBody()->write('Esse é um retorno header');
+  return $response->withHeader('allow', 'PUT')
+    ->withAddedHeader('Content-Length', 30);
+});
+
+/*JSON*/
+$app->get('/json', function (Request $request, Response $response) {
+  return $response->withJson([
+    "nome" => "Lucas Kalks",
+    "email" => "lucas@kalks.com"
+  ]);
+});
+
+/*XML*/
+$app->get('/xml', function (Request $request, Response $response) {
+  $xml = file_get_contents('arquivo.xml');
+  $response->getBody()->write($xml);
+
+  return $response->withHeader('Content-Type', 'application/xml');
+});
+
+/*Middleware*/
+$app->get('/middleware', function (Request $request, Response $response) {
+  $response->getBody()->write('Ação principal');
+});
+
+$app->get('/middleware2', function (Request $request, Response $response) {
+  $response->getBody()->write('Ação principal 2');
+});
+
+
+
 
 $app->run();//executa o framework

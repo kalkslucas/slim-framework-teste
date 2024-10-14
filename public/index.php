@@ -2,6 +2,7 @@
 
 use \Psr\Http\Message\ServerRequestInterface as Request; //namespace de requisição
 use \Psr\Http\Message\ResponseInterface as Response; //namespace de resposta
+use Illuminate\Database\Capsule\Manager as Capsule; //namespace do illuminate database
 
 require '../vendor/autoload.php'; //autoload do composer
 
@@ -174,15 +175,113 @@ $app->get('/xml', function (Request $request, Response $response) {
 });
 
 /*Middleware*/
-$app->get('/middleware', function (Request $request, Response $response) {
-  $response->getBody()->write('Ação principal');
+$app->add(function ($request, $response, $next) {
+  $response->write('Inicio camada 1 + ');
+  //return $next($request, $response);
+  $response = $next($request, $response);
+  $response->write(' + Fim camada 1');
+  return $response;
 });
 
-$app->get('/middleware2', function (Request $request, Response $response) {
-  $response->getBody()->write('Ação principal 2');
+$app->add(function ($request, $response, $next) {
+  $response->write('Inicio camada 2 + ');
+  //return $next($request, $response);
+  $response = $next($request, $response);
+  $response->write(' + Fim camada 2');
+  return $response;
+});
+/*
+$app->add(function ($request, $response, $next) {
+  $response->write('Inicio camada 2 + ');
+  return $next($request, $response);
+});
+*/
+$app->get('/users', function (Request $request, Response $response) {
+  $response->getBody()->write('Ação principal Users');
+});
+
+$app->get('/posts', function (Request $request, Response $response) {
+  $response->getBody()->write('Ação principal Posts');
 });
 
 
 
+/*-------------------------------------------------------------------------------------*/
+/*
+  Respostas de banco de dados
+*/
+$container = $app->getContainer();
+$container['db'] = function () {
+  $capsule = new Capsule;
+
+  $capsule->addConnection([
+    'driver' => 'mysql',
+    'host' => 'localhost',
+    'database' => 'slim',
+    'username' => 'root',
+    'password' => '',
+    'charset' => 'utf8',
+    'collation' => 'utf8_unicode_ci',
+    'prefix' => '',
+  ]);
+
+  // Make this Capsule instance available globally via static methods... (optional)
+  $capsule->setAsGlobal();
+
+  // Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
+  $capsule->bootEloquent();
+
+  return $capsule;
+};
+
+$app->get('/pessoas', function (Request $request, Response $response) {
+  $db = $this->get('db');
+  /* CRIANDO TABELAS NO BANCO */
+
+  /*
+  $db->schema()->dropIfExists('usuarios');
+
+  $db->schema()->create('usuarios', function ($table) {
+    $table->increments('id');
+    $table->string('nome');
+    $table->string('email')->unique();
+    $table->timestamps();
+  });
+  */
+
+  /*INSERIR DADOS NO BANCO*/
+  /*
+  $db->table('usuarios')->insert([
+    
+    'nome' => 'Lucas Kalks',
+    'email' => 'lucas@kalks.com'
+    
+    'nome' => 'Rafaela Ferreira',
+    'email' => 'rafaela@ferreira.br'
+  ]);
+  */
+
+  /*ATUALIZAR DADOS DO BANCO*/
+  /*
+  $db->table('usuarios')
+    ->where('id', 1)
+    ->update([
+      'nome' => 'Lucas Chagas'
+    ]);
+    */
+
+  /*DELETAR DADOS DO BANCO*/
+  /*
+  $db->table('usuarios')
+    ->where('id', 1)
+    ->delete();
+    */
+
+  /*LISTAR DADOS DO BANCO*/
+  $tabela_usuarios = $db->table('usuarios')->get();
+  foreach ($tabela_usuarios as $usuario) {
+    echo "<br> $usuario->nome <br>";
+  }
+});
 
 $app->run();//executa o framework
